@@ -26,7 +26,7 @@
 <body class="bg-light">
     <div class="container my-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h1 class="h3">Transaction Categorizer</h1>
+            <h1 class="h3">Scotia bank credit transactions Categorizer</h1>
 
             <div class="d-flex align-items-center">
                 <button class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#howToModal">How to ?</button>
@@ -36,6 +36,9 @@
 
         <div class="mb-3">
             <input type="file" id="fileInput" class="form-control" accept=".xlsx, .xls" multiple>
+            <p class="text-muted mt-2" style="font-size: 0.9rem;">
+                Note: All files are processed locally on your machine. Nothing is uploaded to any server.
+            </p>
         </div>
 
         <!-- Two-column grid for Category Summary and Monthly Breakdown -->
@@ -78,14 +81,15 @@
                     </div>
                     <div class="modal-body">
                         <ol>
-                            <li>Click on the "Choose File" button to upload your transaction file in .xlsx or .xls
-                                format. You can upload multiple</li>
+                            <li>Click on the "Choose File" button to upload your transaction file in .xlsx or .xls format. You can upload multiple files at once.</li>
                             <li>Review the transactions displayed in the table.</li>
-                            <li>Use the dropdown in the "Category" column to assign categories to transactions. It will also auto assign other
-                                transactions with the same description.</li>
-                            <li>View the "Category Summary" and "Monthly Breakdown" for insights.</li>
+                            <li>Use the dropdown in the "Category" column to assign categories to transactions. The app will automatically assign the same category to other transactions with the same description.</li>
+                            <li>View the "Category Summary" and "Monthly Breakdown" for insights into your spending.</li>
                             <li>Click "Clear Categories" to reset all assigned categories.</li>
                         </ol>
+                        <p class="text-muted mt-3">
+                            Note: This app uses local storage on your device to save category assignments. All data and logic are stored locally and never leave your device.
+                        </p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
