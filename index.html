@@ -25,11 +25,12 @@
 
 <body class="bg-light">
     <div class="container my-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h1 class="h3">Scotia bank credit transactions Categorizer</h1>
-
-            <div class="d-flex align-items-center">
-                <button class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#howToModal">How to ?</button>
+        <div class="row mb-3">
+            <div class="col-12 col-md-8">
+                <h1 class="h3">Scotia Bank Credit Transactions Categorizer</h1>
+            </div>
+            <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0">
+                <button class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#howToModal">How to?</button>
                 <button class="btn btn-danger" onclick="clearCategories()">Clear Categories 🗑️</button>
             </div>
         </div>
@@ -44,13 +45,13 @@
         <!-- Two-column grid for Category Summary and Monthly Breakdown -->
         <div class="row mb-4">
             <!-- Category Summary -->
-            <div class="col-md-6 mb-4">
-                <h3 class="h5">Category Summary</h3>
+            <div class="col-12 col-md-6 mb-4">
+                <h3 class="h5">Overall Category Summary</h3>
                 <div id="categorySummary" class="p-3 bg-white border rounded"></div>
             </div>
-
+        
             <!-- Monthly Breakdown -->
-            <div class="col-md-6">
+            <div class="col-12 col-md-6">
                 <h3 class="h5 mt-4 mt-md-0">Monthly Breakdown</h3>
                 <div id="monthSelector" class="mb-3"></div>
                 <div class="bg-white p-3 border rounded" style="max-width: 100%; max-height: 400px;">
@@ -59,21 +60,23 @@
             </div>
         </div>
 
-        <table id="transactionTable" class="table table-bordered table-striped">
-            <thead class="table-dark">
-                <tr>
-                    <th>Date</th>
-                    <th>Description</th>
-                    <th>Category</th>
-                    <th>Amount</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div class="table-responsive">
+            <table id="transactionTable" class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
 
         <!-- Modal -->
         <div class="modal fade" id="howToModal" tabindex="-1" aria-labelledby="howToModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="howToModalLabel">How to Use Transaction Categorizer</h5>
@@ -81,14 +84,29 @@
                     </div>
                     <div class="modal-body">
                         <ol>
-                            <li>Click on the "Choose File" button to upload your transaction file in .xlsx or .xls format. You can upload multiple files at once.</li>
+                            <li>Click on the "Choose File" button to upload your transaction file in .xlsx or .xls format. You can upload <b>multiple files</b> at once.</li>
                             <li>Review the transactions displayed in the table.</li>
                             <li>Use the dropdown in the "Category" column to assign categories to transactions. The app will automatically assign the same category to other transactions with the same description.</li>
                             <li>View the "Category Summary" and "Monthly Breakdown" for insights into your spending.</li>
                             <li>Click "Clear Categories" to reset all assigned categories.</li>
                         </ol>
+                        <hr>
+                        <h6>How to Download Transactions from Scotia Bank</h6>
+                        <p>Follow these steps to download your credit card transactions:</p>
+                        <ol>
+                            <li>Log in to your Scotia Bank account <b>(web app only)</b> and navigate to your credit card details page.</li>
+                            <li>Select the desired date range for your transactions.</li>
+                            <li>Click on the download icon and choose "Download as Excel" from the dropdown menu.</li>
+                        </ol>
+                        <div class="text-center">
+                            <img src="assets/scotia-ss.png" alt="Scotia Bank Screenshot" class="img-fluid rounded shadow-sm" style="max-width: 100%; height: auto;">
+                        </div>
                         <p class="text-muted mt-3">
-                            Note: This app uses local storage on your device to save category assignments. All data and logic are stored locally and never leave your device.
+                            <strong>Note:</strong> Scroll to the bottom of the transactions list before downloading to ensure all transactions are loaded. Otherwise, not all transactions will be included in the downloaded file.
+                        </p>
+                        <hr>
+                        <p class="text-muted mt-3">
+                            <strong>Note: This app uses local storage on your device to save category assignments. All data and logic are stored locally and never leave your device.</strong>
                         </p>
                     </div>
                     <div class="modal-footer">
