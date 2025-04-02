@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Categorizer</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .categorized {
+            background-color: lightgreen;
+        }
+
+        .uncategorized {
+            background-color: lightsalmon;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <div class="container my-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="h3">Transaction Categorizer</h1>
+            <button class="btn btn-danger" onclick="clearCategories()">Clear Categories</button>
+        </div>
+
+        <div class="mb-3">
+            <input type="file" id="fileInput" class="form-control" accept=".xlsx, .xls">
+        </div>
+
+        <!-- Two-column grid for Category Summary and Monthly Breakdown -->
+        <div class="row mb-4">
+            <!-- Category Summary -->
+            <div class="col-md-6 mb-4">
+                <h3 class="h5">Category Summary</h3>
+                <div id="categorySummary" class="p-3 bg-white border rounded"></div>
+            </div>
+
+            <!-- Monthly Breakdown -->
+            <div class="col-md-6">
+                <h3 class="h5 mt-4 mt-md-0">Monthly Breakdown</h3>
+                <div id="monthSelector" class="mb-3"></div>
+                <div class="bg-white p-3 border rounded" style="max-width: 100%; max-height: 400px;">
+                    <canvas id="monthlyBreakdownChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <table id="transactionTable" class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        let transactions = [];
+        let categories = JSON.parse(localStorage.getItem("categories")) || {};
+        const categoryOptions = [
+            "Food 🍲",
+            "Coffee ☕️",
+            "Grocery 🛒",
+            "Shopping 🎁",
+            "Convenience 💨",
+            "Gas ⛽️",
+            "Subscription 📅",
+            "Entertainment 🎬",
+            "Alcohol 🍺",
+            "Bills 💰",
+            "Miscellaneous 🗂️",
+        ];
+        let monthlyBreakdown = {};
+        let chart; // Chart.js instance
+
+        document.getElementById("fileInput").addEventListener("change", function (event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const workbook = XLSX.read(e.target.result, { type: "binary" });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const data = XLSX.utils.sheet_to_json(sheet);
+                transactions = data.map(tx => ({ ...tx, category: categories[tx.Description] || "" }));
+                renderTable();
+            };
+            reader.readAsBinaryString(file);
+        });
+
+        function renderTable() {
+            const tbody = document.querySelector("#transactionTable tbody");
+            tbody.innerHTML = "";
+            transactions.forEach((tx, index) => {
+                if (tx['Type of Transaction'] == 'Debit') {
+                    const row = document.createElement("tr");
+                    row.className = tx.category ? "categorized" : "uncategorized";
+                    row.innerHTML = `
+                    <td>${new Date(tx.Date).toLocaleString('default', { day: '2-digit', month: 'long', year: 'numeric' })}</td>
+                    <td>${tx.Description}</td>
+                    <td>
+                        <select class="form-select" onchange="updateCategory(${index}, this.value)">
+                            <option value="">Select Category</option>
+                            ${categoryOptions.map(option => `<option value="${option}" ${tx.category === option ? 'selected' : ''}>${option}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td>${tx.Amount}</td>
+                `;
+                    tbody.appendChild(row);
+                }
+            });
+            updateCategorySummary();
+        }
+
+        function updateCategory(index, category) {
+            const description = transactions[index].Description;
+
+            // Update the category for all transactions with the same description
+            transactions.forEach(tx => {
+                if (tx.Description === description) {
+                    tx.category = category;
+                }
+            });
+
+            // Update the categories object for persistence
+            categories[description] = category;
+
+            saveCategories();
+            renderTable();
+        }
+
+        function generateMonthlyBreakdown() {
+            monthlyBreakdown = {}; // Reset the global monthlyBreakdown object
+
+            // Calculate monthly breakdown of categories
+            transactions.forEach(tx => {
+                if (tx['Type of Transaction'] === 'Debit' && tx.category) {
+                    const month = new Date(tx.Date).toLocaleString('default', { month: 'long', year: 'numeric' });
+                    if (!monthlyBreakdown[month]) {
+                        monthlyBreakdown[month] = {};
+                    }
+                    monthlyBreakdown[month][tx.category] = (monthlyBreakdown[month][tx.category] || 0) + parseFloat(tx.Amount);
+                }
+            });
+
+            // Generate month selector
+            const monthSelector = document.getElementById("monthSelector");
+            monthSelector.innerHTML = Object.keys(monthlyBreakdown).map((month, index) => {
+                return `<label class="me-2">
+                <input type="radio" name="month" value="${month}" onchange="updateChart('${month}')" ${index === 0 ? 'checked' : ''}> 
+                ${month}
+            </label>`;
+            }).join('');
+
+            // Initialize the chart with the first month
+            if (Object.keys(monthlyBreakdown).length > 0) {
+                updateChart(Object.keys(monthlyBreakdown)[0]);
+            }
+        }
+
+        function updateChart(selectedMonth) {
+            const data = monthlyBreakdown[selectedMonth]; // Access the global monthlyBreakdown object
+            if (!data) {
+                console.error(`No data found for the selected month: ${selectedMonth}`);
+                return;
+            }
+
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+
+            // Format amounts as currency
+            const currencyFormatter = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+            });
+
+            // Destroy the previous chart if it exists
+            if (chart) {
+                chart.destroy();
+            }
+
+            // Create a new chart
+            const ctx = document.getElementById('monthlyBreakdownChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: [
+                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
+                        ],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const value = context.raw;
+                                    const percentage = ((value / values.reduce((a, b) => a + b, 0)) * 100).toFixed(2);
+                                    return `${context.label}: ${currencyFormatter.format(value)} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCategorySummary() {
+
+            const summary = {};
+            const monthlySummary = {};
+            let totalAmount = 0;
+
+            // Calculate total amount, category-wise amounts, and monthly amounts
+            transactions.forEach(tx => {
+                if (tx['Type of Transaction'] === 'Debit') {
+                    // Category-wise summary
+                    if (tx.category) {
+                        summary[tx.category] = (summary[tx.category] || 0) + parseFloat(tx.Amount);
+                    }
+
+                    // Monthly summary
+                    const month = new Date(tx.Date).toLocaleString('default', { month: 'long', year: 'numeric' });
+                    monthlySummary[month] = (monthlySummary[month] || 0) + parseFloat(tx.Amount);
+
+                    totalAmount += parseFloat(tx.Amount);
+                }
+            });
+
+            // Format amounts as currency
+            const currencyFormatter = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+            });
+
+            // Generate the category summary HTML
+            const summaryDiv = document.getElementById("categorySummary");
+            summaryDiv.innerHTML = Object.keys(summary).map(category => {
+                const percentage = ((summary[category] / totalAmount) * 100).toFixed(2);
+                return `<p>${category}: ${currencyFormatter.format(summary[category])} (${percentage}%)</p>`;
+            }).join('');
+
+            // Add total amount
+            summaryDiv.innerHTML += `<p><strong>Total Amount: ${currencyFormatter.format(totalAmount)}</strong></p>`;
+
+            generateMonthlyBreakdown();
+        }
+
+        function saveCategories() {
+            localStorage.setItem("categories", JSON.stringify(categories));
+        }
+
+        function clearCategories() {
+            localStorage.removeItem("categories");
+            categories = {};
+            transactions.forEach(tx => tx.category = ""); // Clear categories in transactions
+            renderTable(); // Re-render the table
+            updateCategorySummary(); // Update the summary
+        }
+    </script>
+</body>
+
+</html>
